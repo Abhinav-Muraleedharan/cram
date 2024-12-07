@@ -1,0 +1,7 @@
+tokenizer:
+    name: GPT2Tokenizer
+
+d_vocab: 40000
+d_hidden: 100
+n_layers: 100
+
