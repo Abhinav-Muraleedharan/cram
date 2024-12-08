@@ -1,38 +1,44 @@
+
+from cram.models.cram_simple import ResidualNN, create_model, forward_pass
 import jax
 import jax.numpy as jnp
 import optax
-from typing import Any, Optional
+from typing import Any, Optional, Callable
 from functools import partial
-from cram.models.cram_simple import ResidualNN, create_model, forward_pass
+
 
 def mse_loss(params, model, batch, targets):
     """Calculate Mean Squared Error loss."""
-    predictions = model.apply(params, batch)
+    predictions = model.apply(params, batch, training=True)
     return jnp.mean((predictions - targets) ** 2)
 
-#@jax.jit
-def train_step(params, opt_state, model, batch, targets, optimizer):
+def train_step(params, opt_state, model, batch, targets, tx):
     """Perform a single training step.
     
     Args:
         params: Model parameters
         opt_state: Optimizer state
-        model: ResidualNN instance
+        model: Flax model instance
         batch: Input batch
         targets: Target values
-        optimizer: Optax optimizer
+        tx: Optax optimizer
     
     Returns:
         Tuple of (updated params, updated optimizer state, loss)
     """
-    loss_grad_fn = jax.value_and_grad(mse_loss)
-    loss, grads = loss_grad_fn(params, model, batch, targets)
-    updates, opt_state = optimizer.update(grads, opt_state, params)
+    loss_fn = lambda p: mse_loss(p, model, batch, targets)
+    loss, grads = jax.value_and_grad(loss_fn)(params)
+    updates, opt_state = tx.update(grads, opt_state)
     params = optax.apply_updates(params, updates)
     return params, opt_state, loss
 
+# Create a JIT-compiled version of the training step
+@partial(jax.jit, static_argnums=(2, 5))
+def train_step_jit(params, opt_state, model, batch, targets, tx):
+    return train_step(params, opt_state, model, batch, targets, tx)
+
 def train_model(model, params, train_data, train_targets, 
-                n_epochs: int = 100, batch_size: int = 32, 
+                n_epochs: int = 10000, batch_size: int = 128, 
                 learning_rate: float = 1e-3):
     """Train the model.
     
@@ -49,8 +55,8 @@ def train_model(model, params, train_data, train_targets,
         Final model parameters
     """
     # Initialize optimizer
-    optimizer = optax.adam(learning_rate)
-    opt_state = optimizer.init(params)
+    tx = optax.adam(learning_rate)
+    opt_state = tx.init(params)
     
     # Training loop
     n_batches = len(train_data) // batch_size
@@ -59,7 +65,8 @@ def train_model(model, params, train_data, train_targets,
         total_loss = 0.0
         
         # Shuffle data
-        perm = jax.random.permutation(jax.random.PRNGKey(epoch), len(train_data))
+        key = jax.random.PRNGKey(epoch)
+        perm = jax.random.permutation(key, len(train_data))
         train_data_shuffled = train_data[perm]
         train_targets_shuffled = train_targets[perm]
         
@@ -71,8 +78,8 @@ def train_model(model, params, train_data, train_targets,
             targets = train_targets_shuffled[batch_start:batch_end]
             
             # Train step
-            params, opt_state, loss = train_step(
-                params, opt_state, model, batch, targets, optimizer)
+            params, opt_state, loss = train_step_jit(
+                params, opt_state, model, batch, targets, tx)
             total_loss += loss
             
         avg_loss = total_loss / n_batches
@@ -82,16 +89,16 @@ def train_model(model, params, train_data, train_targets,
     return params
 
 if __name__ == "__main__":
-    # Example usage
+    # Example usag
     
     # Generate some dummy data
     key = jax.random.PRNGKey(0)
     key, subkey = jax.random.split(key)
     
     n_samples = 1000
-    n_in = 20
+    n_in = 10
     n_hidden = 32
-    n_out = 20
+    n_out = 5
     
     # Random input data
     X = jax.random.normal(key, (n_samples, n_in))
