@@ -42,7 +42,7 @@ def create_model(n_in: int, n_hidden: int, n_out: int, key: Any) -> tuple[Residu
     params = model.init(key, jnp.ones((1, n_in)))
     return model, params
 
-#@jax.jit
+@jax.jit
 def forward_pass(params, model, batch):
     """Perform a forward pass through the model.
     

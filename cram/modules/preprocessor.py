@@ -1,3 +1,4 @@
+import numpy as np
 import jax.numpy as jnp
 from cram.data.dataloader import load_shakespeare_dataset
 
@@ -12,8 +13,8 @@ def compute_retention_matrix(train_ds,alpha):
     print("Size of training Dataset",len(train_ds))
     i = 0
     for t in train_ds:
-        # if i == 10:
-        #     break
+        if i == 5000:
+            break
         if i == 0:
             m_t = jnp.array([token_to_vector(t)])
             r_t = alpha*jnp.array([token_to_vector(t)])
@@ -21,7 +22,7 @@ def compute_retention_matrix(train_ds,alpha):
             v = token_to_vector(t)
             r_i = alpha*(r_t[-1] + v)
             r_t = jnp.vstack([r_t,r_i])
-            m_t = jnp.vstack([m_t,v])
+            #m_t = jnp.vstack([m_t,v])
         i = i + 1
         print(i)
     return r_t, m_t
@@ -31,6 +32,8 @@ if __name__ == '__main__':
     train_ds, test_ds = load_shakespeare_dataset(path)
     alpha = 0.5
     r_t,m_t = compute_retention_matrix(train_ds,alpha)
+    with open('rt.npy', 'wb') as f:
+        np.save(f, r_t)
     temp_1 = alpha*(m_t[2] + alpha*m_t[1] + ((alpha)**2)*m_t[0])
     temp_2 = r_t[2]
     print(temp_2)

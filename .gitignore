@@ -27,6 +27,9 @@ env/
 .env
 .env.local
 
+# Numpy Files:
+*.npy
+
 # Logs
 *.log
 

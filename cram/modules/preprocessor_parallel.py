@@ -44,6 +44,7 @@ if __name__ == '__main__':
     train_ds, test_ds = load_shakespeare_dataset(path)
     alpha = 0.5
     r_t, m_t = compute_retention_matrix(train_ds, alpha)
+    
     temp_1 = alpha * (m_t[2] + alpha * m_t[1] + (alpha ** 2) * m_t[0])
     temp_2 = r_t[2]
     print(temp_2)
