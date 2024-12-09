@@ -1,5 +1,7 @@
 """
 Implementation of Cumulative Retention Autoregressive Model (CRAM)
+
+asda 
 """
 import jax
 import jax.numpy as jnp
