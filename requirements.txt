@@ -10,7 +10,7 @@ certifi==2024.8.30
 charset-normalizer==3.4.0
 chex==0.1.87
 click==8.1.7
--e git+https://github.com/Abhinav-Muraleedharan/cram.git@6c1fd2ec06cc31dfa43d97729fc1114fcab7f32b#egg=cram
+-e git+https://github.com/Abhinav-Muraleedharan/cram.git@c952dfd564f9622f5ca9924cd31b38f33113a464#egg=cram
 -e git+https://github.com/Homebrew/brew@abc0584215659c5a8716d0798ea2801388d01368#egg=Cumulative_Retention_Autoregressive_Models
 datasets==3.1.0
 dill==0.3.8
