@@ -13,6 +13,10 @@ def mse_loss(params, model, batch, targets):
     predictions = model.apply(params, batch, training=True)
     return jnp.mean((predictions - targets) ** 2)
 
+def cross_entropy_loss(params,model,batch,targets):
+    predictions = model.apply(params,batch,training=True)
+    return jnp.mean(optax.softmax_cross_entropy_with_integer_labels(predictions, targets))
+
 def train_step(params, opt_state, model, batch, targets, tx):
     """Perform a single training step.
     
