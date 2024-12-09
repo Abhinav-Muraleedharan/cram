@@ -1,4 +1,5 @@
 
+import time
 from cram.models.cram_simple import ResidualNN, create_model, forward_pass
 import jax
 import jax.numpy as jnp
@@ -33,12 +34,12 @@ def train_step(params, opt_state, model, batch, targets, tx):
     return params, opt_state, loss
 
 # Create a JIT-compiled version of the training step
-@partial(jax.jit, static_argnums=(2, 5))
+@partial(jax.jit, static_argnums=(2,5))
 def train_step_jit(params, opt_state, model, batch, targets, tx):
     return train_step(params, opt_state, model, batch, targets, tx)
 
 def train_model(model, params, train_data, train_targets, 
-                n_epochs: int = 10000, batch_size: int = 128, 
+                n_epochs: int = 100, batch_size: int = 128, 
                 learning_rate: float = 1e-3):
     """Train the model.
     
@@ -89,16 +90,15 @@ def train_model(model, params, train_data, train_targets,
     return params
 
 if __name__ == "__main__":
-    # Example usag
-    
+    start_time = time.time()
     # Generate some dummy data
     key = jax.random.PRNGKey(0)
     key, subkey = jax.random.split(key)
     
     n_samples = 1000
-    n_in = 10
+    n_in = 20
     n_hidden = 32
-    n_out = 5
+    n_out = 20
     
     # Random input data
     X = jax.random.normal(key, (n_samples, n_in))
@@ -114,4 +114,6 @@ if __name__ == "__main__":
     # Make predictions
     test_input = jax.random.normal(key, (1, n_in))
     prediction = forward_pass(final_params, model, test_input)
+    end_time = time.time()
     print("Test prediction shape:", prediction.shape)
+    print("Total Execution time:", end_time-start_time)
