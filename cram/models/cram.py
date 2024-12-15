@@ -69,7 +69,7 @@ class CRAMEmbeddings(nn.Module):
         # Combine embeddings
         embeddings = inputs_embeds 
         
-        return embeddings, position_ids
+        return embeddings
     
 
 class CRAMKernel(nn.Module):
@@ -197,7 +197,7 @@ class CRAM(nn.Module):
     def setup(self):
         self.embeddings = CRAMEmbeddings(
             vocab_size=self.config.vocab_size,
-            hidden_size=self.config.hidden_size    
+            hidden_size=self.config.d_hidden    
         )
         
         self.layers = [
@@ -220,7 +220,9 @@ class CRAM(nn.Module):
         output_hidden_states: bool = False,
     ) -> Any:
         
-        hidden_states = self.embeddings(input_ids, training=training)
+        print(len(self.layers))
+        
+        hidden_states = self.embeddings(input_ids,position_ids, training=training)
         
         all_hidden_states = () if output_hidden_states else None
         
@@ -228,7 +230,7 @@ class CRAM(nn.Module):
             if output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
             
-            hidden_states = layer(hidden_states, training=training)
+            hidden_states = layer(hidden_states,position_ids, training=training)
         
         hidden_states = self.final_layer_norm(hidden_states)
         
@@ -242,6 +244,14 @@ class CRAM(nn.Module):
 
 def main(config:CRAMConfig):
     model = CRAM(config)
+    # generate random input and do forward pass:
+    batch_size = 8
+    seq_length = 128
+    position_ids = jax.random.randint(jax.random.PRNGKey(0), (batch_size, seq_length), 0, config.vocab_size)
+    input_ids = jax.random.randint(jax.random.PRNGKey(0), (batch_size, seq_length), 0, config.vocab_size)
+    out = model(input_ids,position_ids)
+    print(out)
+
 
 
 
