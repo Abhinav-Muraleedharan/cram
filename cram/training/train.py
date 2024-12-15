@@ -15,7 +15,8 @@ from transformers import GPT2Tokenizer
 
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 
-
+def count_parameters(params):
+    return sum(jnp.size(param) for param in jax.tree_util.tree_leaves(params))
 
 def mse_loss(params, model, batch, targets):
     """Calculate Mean Squared Error loss."""
@@ -123,6 +124,7 @@ if __name__ == "__main__":
     n_hidden = 32
     n_out = d_vocab
     print("train data:",train_ds[0:4])
+    print("Size of training data:",len(train_ds))
     # Random input data
     X = r_t
     # Random target data
@@ -130,7 +132,8 @@ if __name__ == "__main__":
     
     # Create and train model
     model, params = create_model(n_in, n_hidden, n_out, key)
-    
+    # Print the number of parameters
+    print(f"Number of parameters: {count_parameters(params)}")
     # Train the model
     final_params = train_model(model, params, X, Y)
     

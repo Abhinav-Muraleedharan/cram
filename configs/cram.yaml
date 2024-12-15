@@ -1,0 +1,9 @@
+
+d_pos: 20
+vocab_size: 50257
+n_layers: 5
+d_hidden: 1024
+batch_size: 8
+seq_len: 2048
+intermediate_size: 1024
+dropout_rate: 0.1
