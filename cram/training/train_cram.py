@@ -6,6 +6,7 @@ import jax.numpy as jnp
 import optax
 from flax.training import train_state
 from cram.models.cram import CRAM, CRAMConfig
+from cram.data.data import DataConfig, create_train_dataloader
 from typing import Tuple, Dict, Any
 from tqdm.auto import tqdm
 import wandb
@@ -211,7 +212,7 @@ def train(
 
 # Example usage:
 if __name__ == '__main__':
-    
+    data_config = DataConfig()
     parser = argparse.ArgumentParser(description="Train the CRAM model.")
     parser.add_argument(
         "--config",
@@ -243,7 +244,8 @@ if __name__ == '__main__':
                 'attention_mask': jnp.ones((config.batch_size, config.seq_len))
             }
     
-    train_dataloader = create_dummy_dataloader(config)
+    train_dataloader = create_train_dataloader(data_config, num_workers=0)
+    #create_dummy_dataloader(config)
     
     # Train the model
     trained_state = train(config, train_dataloader, experiment_name=args.experiment_name)

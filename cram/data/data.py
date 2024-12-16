@@ -1,14 +1,21 @@
 
-from cram.models.cram import CRAM, CRAMConfig
+import torch
 import numpy as np
 import jax.numpy as jnp
- from pydantic import BaseModel
+from pydantic import BaseModel
 from typing import Dict, Iterator, Callable
 from torch.utils.data import DataLoader, Dataset
-import torch
+from cram.models.cram import CRAM, CRAMConfig
 from itertools import islice
 from datasets import load_dataset
 from transformers import AutoTokenizer
+
+    
+class DataConfig(BaseModel):
+    d_pos: int = 16
+    vocab_size: int = 50257  # GPT-2 vocab size
+    seq_len: int = 128
+    batch_size: int = 4
 
 class ChunkedDataset(Dataset):
     """Dataset class for chunked tokens"""
@@ -155,15 +162,8 @@ def create_val_dataloader(config: CRAMConfig, num_workers: int = 0) -> DataLoade
 
 # Example usage:
 if __name__ == "__main__":
-    # Test the dataloader
-    
-    class TestConfig(BaseModel):
-        d_pos: int = 16
-        vocab_size: int = 50257  # GPT-2 vocab size
-        seq_len: int = 128
-        batch_size: int = 4
-    
-    config = TestConfig()
+    # Test the dataloader  
+    config = DataConfig()
     
     # Create dataloaders with no multiprocessing for testing
     print("\nCreating dataloaders...")
