@@ -12,10 +12,10 @@ from transformers import AutoTokenizer
 
     
 class DataConfig(BaseModel):
-    d_pos: int = 16
+    d_pos: int = 20
     vocab_size: int = 50257  # GPT-2 vocab size
-    seq_len: int = 128
-    batch_size: int = 4
+    seq_len: int = 8
+    batch_size: int = 2
 
 class ChunkedDataset(Dataset):
     """Dataset class for chunked tokens"""
