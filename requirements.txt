@@ -10,14 +10,14 @@ certifi==2024.8.30
 charset-normalizer==3.4.0
 chex==0.1.87
 click==8.1.7
--e git+https://github.com/Abhinav-Muraleedharan/cram.git@c952dfd564f9622f5ca9924cd31b38f33113a464#egg=cram
--e git+https://github.com/Homebrew/brew@abc0584215659c5a8716d0798ea2801388d01368#egg=Cumulative_Retention_Autoregressive_Models
+colorama @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_100_k35lkb/croot/colorama_1672386539781/work
+-e git+https://github.com/Abhinav-Muraleedharan/cram.git@00b924758c3f8ae96840f99ea7f2ca1a3d6445ff#egg=cram
 datasets==3.1.0
 dill==0.3.8
 docker-pycreds==0.4.0
 etils==1.5.2
 eval_type_backport==0.2.0
-exceptiongroup==1.2.2
+exceptiongroup @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_b2258scr33/croot/exceptiongroup_1706031391815/work
 filelock==3.16.1
 flake8==7.1.1
 flax==0.8.5
@@ -30,7 +30,7 @@ humanize==4.11.0
 idna==3.10
 importlib_metadata==8.5.0
 importlib_resources==6.4.5
-iniconfig==2.0.0
+iniconfig @ file:///home/linux1/recipes/ci/iniconfig_1610983019677/work
 isort==5.13.2
 jax==0.4.30
 jaxlib==0.4.30
@@ -51,12 +51,12 @@ numpy==2.0.2
 opt_einsum==3.4.0
 optax==0.2.4
 orbax-checkpoint==0.6.4
-packaging==24.2
+packaging @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_81ri4yfpjw/croot/packaging_1720101866878/work
 pandas==2.2.3
 pathspec==0.12.1
 pipdeptree==2.24.0
 platformdirs==4.3.6
-pluggy==1.5.0
+pluggy @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_bei6q1cvvt/croot/pluggy_1733169621717/work
 propcache==0.2.1
 protobuf==5.29.1
 psutil==6.1.0
@@ -66,7 +66,7 @@ pydantic==2.10.3
 pydantic_core==2.27.1
 pyflakes==3.2.0
 Pygments==2.18.0
-pytest==8.3.4
+pytest @ file:///home/conda/feedstock_root/build_artifacts/pytest_1733217473289/work
 python-dateutil==2.9.0.post0
 pytz==2024.2
 PyYAML==6.0.2
@@ -82,7 +82,7 @@ smmap==5.0.1
 sympy==1.13.1
 tensorstore==0.1.69
 tokenizers==0.21.0
-tomli==2.2.1
+tomli @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_d0e5ffbf-5cf1-45be-8693-c5dff8108a2awhthtjlq/croots/recipe/tomli_1657175508477/work
 toolz==1.0.0
 torch==2.5.1
 tqdm==4.67.1
