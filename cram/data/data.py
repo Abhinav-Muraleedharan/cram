@@ -176,6 +176,7 @@ if __name__ == "__main__":
         print(f"\nBatch {batch_idx}:")
         for k, v in batch.items():
             print(f"{k}: shape={v.shape}, dtype={v.dtype}")
+            print(v)
     
     print("\nTesting validation dataloader:")
     for batch_idx, batch in enumerate(islice(val_loader, 2)):

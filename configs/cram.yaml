@@ -4,6 +4,6 @@ vocab_size: 50257
 n_layers: 15
 d_hidden: 1024
 batch_size: 8
-seq_len: 1024
+seq_len: 48
 intermediate_size: 1024
 dropout_rate: 0.1

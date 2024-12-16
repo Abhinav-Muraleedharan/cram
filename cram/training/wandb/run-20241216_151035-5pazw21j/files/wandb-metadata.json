@@ -1,0 +1,49 @@
+{
+  "os": "macOS-12.5.1-arm64-arm-64bit",
+  "python": "CPython 3.9.20",
+  "startedAt": "2024-12-16T23:10:35.134238Z",
+  "args": [
+    "--config",
+    "/Users/abhinavmuraleedharan/cram/configs/cram.yaml"
+  ],
+  "program": "/Users/abhinavmuraleedharan/cram/cram/training/train_cram_eval.py",
+  "codePath": "cram/training/train_cram_eval.py",
+  "git": {
+    "remote": "https://github.com/Abhinav-Muraleedharan/cram.git",
+    "commit": "c0270ceb18a1f680f8dec715649a36f3f615e5fb"
+  },
+  "email": "abhinavmuraleedharan@gmail.com",
+  "root": "/Users/abhinavmuraleedharan/cram/cram/training",
+  "host": "Abhinavs-MacBook-Air-2.local",
+  "username": "abhinavmuraleedharan",
+  "executable": "/opt/homebrew/anaconda3/envs/cram/bin/python",
+  "codePathLocal": "train_cram_eval.py",
+  "cpu_count": 8,
+  "cpu_count_logical": 8,
+  "disk": {
+    "/": {
+      "total": "245107195904",
+      "used": "245036556288"
+    },
+    "/System/Volumes/Data": {
+      "total": "245107195904",
+      "used": "245036556288"
+    }
+  },
+  "memory": {
+    "total": "8589934592"
+  },
+  "cpu": {
+    "count": 8,
+    "countLogical": 8
+  },
+  "apple": {
+    "name": "Apple M1",
+    "ecpuCores": 4,
+    "pcpuCores": 4,
+    "gpuCores": 7,
+    "memoryGb": 8,
+    "swapTotalBytes": "4831838208",
+    "ramTotalBytes": "8589934592"
+  }
+}
