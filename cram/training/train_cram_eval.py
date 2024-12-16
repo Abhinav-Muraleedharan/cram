@@ -6,7 +6,7 @@ import jax.numpy as jnp
 import optax
 from flax.training import train_state
 from cram.models.cram import CRAM, CRAMConfig
-from cram.data.data import DataConfig, create_train_dataloader,create_val_dataloader
+from cram.data.data import DataConfig, create_train_dataloader, create_val_dataloader
 from typing import Tuple, Dict, Any
 from tqdm.auto import tqdm
 import wandb
@@ -102,21 +102,68 @@ def train_step(
     
     return state, metrics
 
+@jax.jit
+def eval_step(
+    state: TrainState,
+    batch: Dict[str, jnp.ndarray],
+) -> Dict[str, float]:
+    """Single evaluation step"""
+    input_ids = batch['input_ids']
+    position_ids = batch['position_ids']
+    labels = batch['labels']
+    padding_mask = batch['attention_mask']
+    
+    logits = state.apply_fn(
+        {'params': state.params},
+        input_ids,
+        position_ids,
+        training=False
+    )
+    
+    loss = compute_loss(logits, labels, padding_mask)
+    
+    metrics = {
+        'eval_loss': loss,
+        'eval_perplexity': jnp.exp(loss)
+    }
+    
+    return metrics
+
+def evaluate(
+    state: TrainState,
+    eval_dataloader,
+) -> Dict[str, float]:
+    """Evaluate the model on the validation set"""
+    eval_metrics = []
+    
+    for batch in tqdm(eval_dataloader, desc="Evaluating"):
+        metrics = eval_step(state, batch)
+        eval_metrics.append(metrics)
+    
+    # Compute mean of metrics across batches
+    avg_metrics = {
+        k: float(jnp.mean(jnp.stack([metrics[k] for metrics in eval_metrics])))
+        for k in eval_metrics[0].keys()
+    }
+    
+    return avg_metrics
+
 def train_epoch(
     state: TrainState,
     train_dataloader,
+    eval_dataloader,
     rng: jax.random.PRNGKey,
     epoch: int
 ) -> Tuple[TrainState, Dict[str, float], list]:
-    """Train for a single epoch"""
+    """Train for a single epoch and evaluate"""
     batch_metrics = []
-    step_metrics = []  # Store metrics for each step
+    step_metrics = []
     
+    # Training
     for batch_idx, batch in enumerate(tqdm(train_dataloader, desc=f'Epoch {epoch}')):
         rng, dropout_rng = jax.random.split(rng)
         state, metrics = train_step(state, batch, dropout_rng)
         
-        # Convert JAX arrays to regular floats for logging
         step_metric = {
             'epoch': epoch,
             'batch': batch_idx,
@@ -124,29 +171,33 @@ def train_epoch(
             'perplexity': float(metrics['perplexity'])
         }
         
-        # Log to wandb
         wandb.log(step_metric)
-        
         batch_metrics.append(metrics)
         step_metrics.append(step_metric)
     
-    # Compute mean of metrics across batches
+    # Evaluation
+    eval_metrics = evaluate(state, eval_dataloader)
+    
+    # Compute mean of training metrics across batches
     epoch_metrics = {
         k: float(jnp.mean(jnp.stack([metrics[k] for metrics in batch_metrics])))
         for k in batch_metrics[0].keys()
     }
+    
+    # Add evaluation metrics
+    epoch_metrics.update(eval_metrics)
     
     return state, epoch_metrics, step_metrics
 
 def train(
     config: CRAMConfig,
     train_dataloader,
+    eval_dataloader,
     experiment_name: str = None,
     num_epochs: int = 10,
     seed: int = 42
 ) -> TrainState:
     """Main training loop with logging"""
-    # Initialize wandb
     if experiment_name is None:
         experiment_name = f"cram_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
     
@@ -160,19 +211,17 @@ def train(
         }
     )
     
-    # Create directory for saving metrics
     save_dir = Path(f"logs/{experiment_name}")
     save_dir.mkdir(parents=True, exist_ok=True)
     
     rng = jax.random.PRNGKey(seed)
     rng, init_rng = jax.random.split(rng)
     
-    # Initialize training state
     state = create_train_state(init_rng, config)
     
-    # Lists to store all metrics
     all_epoch_metrics = []
     all_step_metrics = []
+    best_eval_loss = float('inf')
     
     # Training loop
     for epoch in range(num_epochs):
@@ -180,24 +229,31 @@ def train(
         start_time = time.time()
         
         state, epoch_metrics, step_metrics = train_epoch(
-            state, train_dataloader, epoch_rng, epoch
+            state, train_dataloader, eval_dataloader, epoch_rng, epoch
         )
         
         epoch_time = time.time() - start_time
         epoch_metrics['epoch'] = epoch
         epoch_metrics['time'] = epoch_time
         
-        # Log epoch metrics
         wandb.log({f"epoch_{k}": v for k, v in epoch_metrics.items()})
         
-        print(f'Epoch {epoch + 1}: loss = {epoch_metrics["loss"]:.4f}, '
-              f'perplexity = {epoch_metrics["perplexity"]:.4f}, '
+        print(f'Epoch {epoch + 1}: '
+              f'train_loss = {epoch_metrics["loss"]:.4f}, '
+              f'train_perplexity = {epoch_metrics["perplexity"]:.4f}, '
+              f'eval_loss = {epoch_metrics["eval_loss"]:.4f}, '
+              f'eval_perplexity = {epoch_metrics["eval_perplexity"]:.4f}, '
               f'time = {epoch_time:.2f}s')
+        
+        # Save best model
+        if epoch_metrics["eval_loss"] < best_eval_loss:
+            best_eval_loss = epoch_metrics["eval_loss"]
+            # TODO: Add model checkpointing here
         
         all_epoch_metrics.append(epoch_metrics)
         all_step_metrics.extend(step_metrics)
     
-    # Save metrics to CSV
+    # Save metrics
     pd.DataFrame(all_epoch_metrics).to_csv(
         save_dir / "epoch_metrics.csv", index=False
     )
@@ -205,12 +261,9 @@ def train(
         save_dir / "step_metrics.csv", index=False
     )
     
-    # Close wandb run
     wandb.finish()
-    
     return state
 
-# Example usage:
 if __name__ == '__main__':
     data_config = DataConfig()
     parser = argparse.ArgumentParser(description="Train the CRAM model.")
@@ -228,25 +281,16 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
     
-    # Load configuration
     with open(args.config, "r") as f:
         config_dict = yaml.safe_load(f)
         config = CRAMConfig.model_validate(config_dict)
     
-    # Create dummy data loader for demonstration
-    # Replace this with your actual data loading logic
-    def create_dummy_dataloader(config):
-        while True:
-            yield {
-                'input_ids': jnp.zeros((config.batch_size, config.seq_len), dtype=jnp.int32),
-                'position_ids': jnp.zeros((config.batch_size, config.seq_len, config.d_pos)),
-                'labels': jnp.zeros((config.batch_size, config.seq_len), dtype=jnp.int32),
-                'attention_mask': jnp.ones((config.batch_size, config.seq_len))
-            }
-    
     train_dataloader = create_train_dataloader(data_config, num_workers=0)
     eval_dataloader = create_val_dataloader(data_config, num_workers=0)
-    #create_dummy_dataloader(config)
     
-    # Train the model
-    trained_state = train(config, train_dataloader, experiment_name=args.experiment_name)
+    trained_state = train(
+        config, 
+        train_dataloader, 
+        eval_dataloader,
+        experiment_name=args.experiment_name
+    )

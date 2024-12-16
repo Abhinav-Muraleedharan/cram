@@ -1,0 +1,1 @@
+{"epoch_epoch":9,"_wandb":{"runtime":136},"epoch_time":13.878923177719116,"epoch":9,"epoch_eval_perplexity":91861.46875,"perplexity":93.48310852050781,"loss":4.53778076171875,"_timestamp":1.734379985085553e+09,"epoch_perplexity":96.24803161621094,"_runtime":136.271848,"_step":259,"epoch_loss":4.501243591308594,"epoch_eval_loss":10.31108570098877,"batch":24}
