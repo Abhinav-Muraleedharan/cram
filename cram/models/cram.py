@@ -8,6 +8,7 @@ import argparse
 import jax.numpy as jnp
 import flax.linen as nn
 from functools import partial
+from jax.tree_util import tree_flatten
 from pydantic import BaseModel, Field
 from typing import Any, Optional, Tuple
 
@@ -46,9 +47,6 @@ def batch_binary_representation_matrix(batch_input_vectors, D):
     binary_matrix = binary_matrix.transpose(1, 0, 2)  # Shape: (B, D, N)
     return binary_matrix
 
-
-
-
 class CRAMEmbeddings(nn.Module):
     """Embeddings module for CRAM"""
     vocab_size: int
@@ -84,10 +82,10 @@ class CRAMKernel(nn.Module):
     
     def __call__(self,x:jnp.array, training: bool= True) -> jnp.array:
         x_q = self.kernel_layer(x) # Implements Qx
-        print("Shape of x_q:", x_q.shape)
-        print("shape of x:",x.shape)
-        y_out = jnp.sum(x * x_q,axis=1)
-        print("Shape of y_out:", y_out.shape)
+        # print("Shape of x_q:", x_q.shape)
+        # print("shape of x:",x.shape)
+        y_out = jnp.sum(x * x_q,axis=2)
+        #print("Shape of y_out:", y_out.shape)
         y_out = nn.sigmoid(y_out)
         return y_out 
 
@@ -122,10 +120,12 @@ class CRAMScore(nn.Module):
         # x_kernel (B,T)
         # pos_id (B,T,D)
         x_kernel_expanded = jnp.expand_dims(x_kernel, axis=-1) 
+        # print("shape of x:",x_kernel_expanded.shape)
+        # print("shape of positional ids:", pos_ids.shape)
         x = jnp.concatenate([x_kernel_expanded, pos_ids], axis=-1) 
-        print("shape of x:",x.shape)
+       
         y_out = self.score_layer(x) # Implements f(x_i,i)
-        print("Shape of y_out:", y_out.shape) # Expect: (B,T)
+        #print("Shape of y_out:", y_out.shape) # Expect: (B,T)
         return y_out 
 
 
@@ -171,8 +171,7 @@ class CRAMBlock(nn.Module):
         self.ffn = nn.Sequential([
             nn.Dense(self.intermediate_size),
             nn.gelu,
-            nn.Dense(self.hidden_size),
-            nn.Dropout(rate=self.dropout_rate)
+            nn.Dense(self.hidden_size)
         ])
     
     def __call__(self, x: jnp.ndarray, pos_ids:jnp.ndarray, training: bool = True) -> jnp.array:
@@ -182,7 +181,7 @@ class CRAMBlock(nn.Module):
         #1) compute kernel function 
         x_kernel = self.kernel_layer(x)
         x_scores = self.score_layer(x_kernel, pos_ids) # (batch, seq_len)
-        x_retention = self.retention_layer(x_scores)
+        x_retention = self.retention_layer(x, x_scores,training=False)
 
         retention_output = self.ffn(x_retention)
         # First residual connection
@@ -192,7 +191,7 @@ class CRAMBlock(nn.Module):
 
 class CRAM(nn.Module):
     """Main CRAM model implementation"""
-    config: Any 
+    config: CRAMConfig
     
     def setup(self):
         self.embeddings = CRAMEmbeddings(
@@ -202,16 +201,22 @@ class CRAM(nn.Module):
         
         self.layers = [
             CRAMBlock(
-                hidden_size=self.config.hidden_size,
+                hidden_size=self.config.d_hidden,
                 intermediate_size=self.config.intermediate_size,
                 dropout_rate=self.config.dropout_rate,
                 d_pos = self.config.d_pos
             )
-            for _ in range(self.config.num_hidden_layers)
+            for _ in range(self.config.n_layers)
         ]
         
         self.final_layer_norm = nn.LayerNorm(epsilon=1e-5)
+        self.unembedding_layer = nn.Dense(
+            features=self.config.vocab_size,  # Project to vocabulary size
+            use_bias=False,           # Typically, no bias is used in unembedding
+            name="unembedding_layer"
+        )
         
+    
     def __call__(
         self,
         input_ids: jnp.array,
@@ -220,7 +225,6 @@ class CRAM(nn.Module):
         output_hidden_states: bool = False,
     ) -> Any:
         
-        print(len(self.layers))
         
         hidden_states = self.embeddings(input_ids,position_ids, training=training)
         
@@ -238,19 +242,32 @@ class CRAM(nn.Module):
             all_hidden_states = all_hidden_states + (hidden_states,)
             return hidden_states, all_hidden_states
         
-        return hidden_states
+        logits = self.unembedding_layer(hidden_states)
+        
+        return logits
     
 
 
 def main(config:CRAMConfig):
+    key = jax.random.PRNGKey(0)
     model = CRAM(config)
     # generate random input and do forward pass:
     batch_size = 8
-    seq_length = 128
-    position_ids = jax.random.randint(jax.random.PRNGKey(0), (batch_size, seq_length), 0, config.vocab_size)
+    seq_length = 2048
+    d_pos = config.d_pos
+    position_ids = jax.random.normal(key, (batch_size, seq_length, d_pos))
     input_ids = jax.random.randint(jax.random.PRNGKey(0), (batch_size, seq_length), 0, config.vocab_size)
-    out = model(input_ids,position_ids)
+    variables = model.init(key,input_ids, position_ids)
+    param_shapes = jax.tree_util.tree_map(lambda x: x.shape, variables['params'])
+    total_params = sum(jax.numpy.prod(shape) for shape in tree_flatten(param_shapes)[0])
+
+    print(f"Total number of parameters: {total_params}")
+    
+    # Then apply the model with the variables
+    out = model.apply(variables, input_ids, position_ids, training=False, output_hidden_states=False)
+    #out = model.apply(input_ids,position_ids,training=False,output_hidden_states=False)
     print(out)
+    print("Shape of Output:",out.shape)
 
 
 
