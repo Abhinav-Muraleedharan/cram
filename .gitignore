@@ -26,7 +26,7 @@ env/
 # Local development settings
 .env
 .env.local
-
+.csv
 # Numpy Files:
 *.npy
 
