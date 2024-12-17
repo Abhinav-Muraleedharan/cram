@@ -67,13 +67,7 @@ Our model has been evaluated on various benchmarks:
    - Path-X task
    - Long Range Arena
 
-## Contributing
 
-We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on how to submit pull requests.
-
-## Citation
-
-If you use this code in your research, please reach out to abhi98m@cs.toronto.edu
 
 ## License
 
