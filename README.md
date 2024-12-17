@@ -73,16 +73,7 @@ We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING
 
 ## Citation
 
-If you use this code in your research, please cite:
-
-```bibtex
-@article{your_paper,
-    title={Cumulative Retention Autoregressive Models},
-    author={Your Name},
-    journal={arXiv preprint arXiv:XXXX.XXXXX},
-    year={2024}
-}
-```
+If you use this code in your research, please reach out to abhi98m@cs.toronto.edu
 
 ## License
 
